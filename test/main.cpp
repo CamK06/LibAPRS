@@ -3,6 +3,5 @@
 
 int main()
 {
-    std::cout << "APRSLib test program" << std::endl;
-    libAPRSTest();
+    APRS::init_ip("127.0.0.1", 8001, IFACE_KISS);
 }
