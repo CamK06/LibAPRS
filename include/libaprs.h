@@ -2,7 +2,7 @@
 
 #include <iostream>
 #include <stdint.h>
-#include "interfaces.h"
+#include "libaprs/interfaces.h"
 
 typedef void (*receive_raw_callback_t)(char* data, uint32_t len);
 // TODO: Make this function take in a pointer to an AX25 frame

@@ -1,4 +1,4 @@
-#include "libaprs/aprs.h"
+#include "libaprs.h"
 
 void receive_raw_callback(char* data, uint32_t len)
 {

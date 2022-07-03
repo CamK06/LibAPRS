@@ -1,5 +1,5 @@
 #include "libaprs/kiss.h"
-#include "libaprs/aprs.h"
+#include "libaprs.h"
 
 #include <spdlog/spdlog.h>
 #include <sys/socket.h>
