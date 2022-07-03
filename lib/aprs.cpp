@@ -30,4 +30,13 @@ void init_tty(const char* serialPort, uint32_t baudRate, uint iface)
     // TODO: Implement
 }
 
+receive_raw_callback_t receive_raw_callback = nullptr;
+// TODO: Implement this alongside the rest of AX25 stuff
+//receive_ax25_callback_t receive_ax25_callback = nullptr;
+
+void set_receive_raw_callback(receive_raw_callback_t callback)
+{
+    receive_raw_callback = callback;
+}
+
 }

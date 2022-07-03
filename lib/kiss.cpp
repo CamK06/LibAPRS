@@ -1,4 +1,5 @@
 #include "libaprs/kiss.h"
+#include "libaprs/aprs.h"
 
 #include <spdlog/spdlog.h>
 #include <sys/socket.h>
@@ -73,6 +74,16 @@ void handle_sigio(int sig)
 		return;
 	}
 	spdlog::debug("libAPRS: Received {} bytes from APRS", n);
+
+	// Shift the buffer to remove the KISS framing characters
+	n -= 3; // Remove the KISS framing characters from iteration
+	for(int i = 0; i < n; i++) 
+		buffer[i] = buffer[i+2];
+	buffer[n] = '\0'; // Null terminate the string (we should only have a string after removing framing characters)
+
+	// Pass the data to the receive callback
+	if(APRS::receive_raw_callback != nullptr)
+		APRS::receive_raw_callback(buffer, n);
 }
 
 void init_tty(const char* serialPort, uint32_t baudRate)
