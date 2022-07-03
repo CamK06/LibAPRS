@@ -27,4 +27,5 @@ namespace KISS
 {
 	void init_tcp(const char* ipAddress, uint16_t port);
 	void init_tty(const char* serialPort, uint32_t baudRate);
+	void handle_sigio(int sig);
 }

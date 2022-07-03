@@ -3,7 +3,11 @@
 #include <spdlog/spdlog.h>
 #include <sys/socket.h>
 #include <sys/select.h>
+#include <sys/file.h>
+#include <fcntl.h>
+#include <sys/signal.h>
 #include <arpa/inet.h>
+#include <fstream>
 
 namespace KISS
 {
@@ -44,14 +48,31 @@ void init_tcp(const char* ipAddress, uint16_t port)
 	}
 	spdlog::info("libAPRS: Connected to KISS server");
 
-	// Set the socket to non-blocking
+	// Set the socket to non-blocking and set O_ASYNC
 	int flags = fcntl(sockfd, F_GETFL, 0);
-	fcntl(sockfd, F_SETFL, flags | O_NONBLOCK);
+	fcntl(sockfd, F_SETFL, flags | O_NONBLOCK | O_ASYNC);
 	
+	// Ensure we receive SIGIO on data received
+	signal(SIGIO, handle_sigio);
+	if(fcntl(sockfd, F_SETOWN, getpid()) < 0) {
+		spdlog::error("libAPRS: Error setting SIGIO handler");
+		return;
+	}
+
 	// Set the current iface to TCP
 	currentIface = KISS_TCP_IFACE;
+}
 
-
+void handle_sigio(int sig)
+{
+	// Read data from the socket
+	char buffer[1024];
+	int n = read(sockfd, buffer, 1024);
+	if(n < 0) {
+		spdlog::error("libAPRS: Error reading from KISS socket");
+		return;
+	}
+	spdlog::debug("libAPRS: Received {} bytes from APRS", n);
 }
 
 void init_tty(const char* serialPort, uint32_t baudRate)
