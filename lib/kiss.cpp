@@ -1,4 +1,5 @@
 #include "libaprs/kiss.h"
+#include "libaprs/ax25.h"
 #include "libaprs.h"
 
 #include <spdlog/spdlog.h>
@@ -81,9 +82,16 @@ void handle_sigio(int sig)
 		buffer[i] = buffer[i+2];
 	buffer[n] = '\0'; // Null terminate the string (we should only have a string after removing framing characters)
 
-	// Pass the data to the receive callback
+	// Pass the data to the raw receive callback
 	if(APRS::receive_raw_callback != nullptr)
 		APRS::receive_raw_callback(buffer, n);
+
+	// TODO: Implement
+	// Parse the AX.25 data
+	// AX25Frame* frame = new AX25Frame();
+	// AX25::parse_frame(buffer, n, frame);
+	// if(APRS::receive_ax25_callback != nullptr)
+	// 	APRS::receive_ax25_callback(frame);
 }
 
 void init_tty(const char* serialPort, uint32_t baudRate)
