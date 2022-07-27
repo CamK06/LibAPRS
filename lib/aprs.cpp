@@ -5,6 +5,8 @@
 namespace APRS
 {
 
+int currentIface = -1;
+
 void init_ip(const char* ipAddress, uint16_t port, int iface)
 {
 #ifndef NDEBUG
@@ -16,6 +18,7 @@ void init_ip(const char* ipAddress, uint16_t port, int iface)
     switch(iface) {
         case IFACE_KISS:
             KISS::init_tcp(ipAddress, port);
+            currentIface = IFACE_KISS;
             break;
         default:
             spdlog::error("libAPRS: Invalid interface type");
@@ -28,6 +31,18 @@ void init_ip(const char* ipAddress, uint16_t port, int iface)
 void init_tty(const char* serialPort, uint32_t baudRate, int iface)
 {
     // TODO: Implement
+}
+
+void send_raw(const char* data, uint32_t len)
+{
+    switch(currentIface) {
+        case IFACE_KISS:
+            KISS::send_raw(data, len);
+            break;
+        default:
+            spdlog::error("libAPRS: No interface selected! Are you sure you initialized libAPRS?");
+            break;
+    }
 }
 
 receive_raw_callback_t receive_raw_callback = nullptr;

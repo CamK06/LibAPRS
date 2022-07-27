@@ -99,4 +99,31 @@ void init_tty(const char* serialPort, uint32_t baudRate)
 	// TODO
 }
 
+void send_raw(const char* data, uint32_t len)
+{
+	// Build a KISS frame
+	char* kissFrame = new char[len+3];
+	kissFrame[0] = 0xC0;
+	kissFrame[1] = 0x00;
+	for(int i = 0; i < len; i++)
+		kissFrame[i+2] = data[i];
+	kissFrame[len+2] = 0xC0;
+
+	// Send the frame
+	if(currentIface == KISS_TCP_IFACE) {
+		int n = write(sockfd, kissFrame, len+3);
+		if(n < 0) {
+			spdlog::error("libAPRS: Error writing to KISS socket");
+			return;
+		}
+		spdlog::debug("libAPRS: Sent {} bytes over KISS", n);
+	}
+	else if(currentIface == KISS_TTY_IFACE) {
+		// TODO
+	}
+
+	// Cleanup
+	delete[] kissFrame;
+}
+
 }
