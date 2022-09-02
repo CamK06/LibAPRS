@@ -88,10 +88,10 @@ void handle_sigio(int sig)
 
 	// TODO: Implement
 	// Parse the AX.25 data
-	// AX25Frame* frame = new AX25Frame();
-	// AX25::parse_frame(buffer, n, frame);
-	// if(APRS::receive_ax25_callback != nullptr)
-	// 	APRS::receive_ax25_callback(frame);
+	AX25Frame* frame = new AX25Frame();
+	AX25::parse_frame(buffer, n, frame);
+	if(APRS::receive_ax25_callback != nullptr)
+		APRS::receive_ax25_callback(frame);
 }
 
 void init_tty(const char* serialPort, uint32_t baudRate)

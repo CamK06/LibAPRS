@@ -10,8 +10,14 @@ void receive_raw_callback(char* data, uint32_t len)
 void receive_ax25_callback(AX25Frame* frame)
 {
     spdlog::debug("Test client: Received AX.25 frame");
-    spdlog::debug("Test client: Callsign: {}", frame->callsign);
-    spdlog::debug("Test client: SSID: {}", frame->ssid);
+    spdlog::debug("Test client: Callsign: {}", frame->source.callsign);
+    spdlog::debug("Test client: Destination: {}", frame->destination.callsign);
+    spdlog::debug("Test client: SSID: {}", frame->source.ssid);
+    spdlog::debug("Test client: digipeater count: {}", frame->rptCount);
+    for(int i = 0; i < frame->rptCount; i++) {
+        spdlog::debug("Test client: Digipeater {}: {}{}", i+1, frame->rptList[i].callsign, frame->rptList[i].ssid);
+    }
+    spdlog::debug("Test client: PID: {}", frame->pid);
     spdlog::debug("Test client: Information field: {}", frame->payload);
 }
 

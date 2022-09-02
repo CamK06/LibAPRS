@@ -1,21 +1,30 @@
 #pragma once
 
 #include <stdint.h>
+#include <stddef.h>
 
 #define AX25_FLAG 0x7e
 #define AX25_CONTROL 0x03
 #define AX25_PROTOCOL 0xf0
 
-// This might be wrong, possibly will be changed later
-struct AX25Frame
+typedef struct AX25Callsign
 {
 	char callsign[7];
 	char ssid;
-	char path[8][7];
-	char digi_path[8][7];
-	char digi_path_ssid[8];
+} AX25Callsign;
+
+typedef struct AX25Frame
+{
+	AX25Callsign source;
+	AX25Callsign destination;
+	AX25Callsign rptList[8];
+	char rptCount;
+	char rptFlags;
+	uint16_t control;
+	char pid;
 	char payload[256];
-};
+	size_t len;
+} AX25Frame;
 
 namespace AX25
 {
