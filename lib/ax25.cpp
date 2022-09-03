@@ -7,6 +7,17 @@
 namespace AX25
 {
 
+void build_frame(AX25Callsign source, AX25Callsign destination, AX25Callsign* rptList, int rptCount, char* payload, AX25Frame* outFrame)
+{
+    outFrame->source = source;
+    outFrame->destination = destination;
+    for(int i = 0; i < rptCount; i++)
+        outFrame->rptList[i] = rptList[i];
+    outFrame->rptCount = rptCount;
+    outFrame->pid = AX25_PROTOCOL;
+    strcpy(outFrame->payload, payload);
+}
+
 void parse_frame(char* data, uint32_t len, AX25Frame* outFrame)
 {
     int controlIndex = 0;

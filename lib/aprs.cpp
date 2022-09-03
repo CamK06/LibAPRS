@@ -1,12 +1,91 @@
 #include "libaprs.h"
 #include "libaprs/kiss.h"
 #include <spdlog/spdlog.h>
+#include <string>
 
 namespace APRS
 {
 
 int currentIface = -1;
 
+// User info
+AX25Callsign callsign = { {"N0CALL"}, 0 };
+AX25Callsign destination = { "APZ123", 0 };
+AX25Callsign path[8] = { {"WIDE1 ", 1}, {"WIDE2 ", 2} };
+int pathCount = 2;
+
+// Abstracted user functions
+void set_callsign(const char* callsign, uint8_t ssid)
+{
+    for(int i = 0; i < 6; i++) {
+        if(i > strlen(callsign)-1) {
+            APRS::callsign.callsign[i] = ' ';
+            continue;
+        }
+        APRS::callsign.callsign[i] = callsign[i];
+    }
+    APRS::callsign.ssid = ssid;
+}
+
+void set_destination(const char* callsign, uint8_t ssid)
+{
+    for(int i = 0; i < 6; i++) {
+        if(i > strlen(callsign)-1) {
+            APRS::destination.callsign[i] = ' ';
+            continue;
+        }
+        APRS::destination.callsign[i] = callsign[i];
+    }
+    APRS::destination.ssid = ssid;
+}
+
+void set_digi_path(const char* callsign, uint8_t ssid, int index)
+{
+    for(int i = 0; i < 6; i++) {
+        if(i > strlen(callsign)-1) {
+            APRS::path[index].callsign[i] = ' ';
+            continue;
+        }
+        APRS::path[index].callsign[i] = callsign[i];
+    }
+    APRS::path[index].ssid = ssid;
+    pathCount = index + 1;
+}
+
+void send_raw_info(const char* info)
+{
+    // Build the frame
+    AX25Frame frame;
+    AX25::build_frame(callsign, destination, path, pathCount, (char*)info, &frame);
+
+    // Send the frame
+    send_ax25(&frame);
+}
+
+void send_message(const char* message, const char* destinationCall, uint8_t destinationSSID)
+{
+    // Format the message for the info field/payload
+    char* info = new char[256];
+    info[0] = ':';
+    for(int i = 1; i < 10; i++) {
+        if(i > strlen(destinationCall)) {
+            info[i] = ' ';
+            continue;
+        }
+        info[i] = destinationCall[i-1];
+    }
+    info[10] = ':';
+    strcpy(info+11, message);
+
+    // Build the frame
+    AX25Frame frame;
+    AX25::build_frame(callsign, destination, path, pathCount, info, &frame);
+
+    // Send the frame
+    send_ax25(&frame);
+}
+
+// "Backend" functions
 void init_ip(const char* ipAddress, uint16_t port, int iface)
 {
 #ifndef NDEBUG

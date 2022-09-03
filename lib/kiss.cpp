@@ -63,34 +63,6 @@ void init_tcp(const char* ipAddress, uint16_t port)
 	currentIface = KISS_TCP_IFACE;
 }
 
-void handle_sigio(int sig)
-{
-	// Read data from the KISS device
-	char buffer[1024];
-	int n = read(kissfd, buffer, 1024);
-	if(n < 0) {
-		spdlog::error("libAPRS: Error reading from KISS TNC");
-		return;
-	}
-	spdlog::debug("libAPRS: Received {} bytes from APRS", n);
-
-	// Shift the buffer to remove the KISS framing characters
-	n -= 3; // Remove the KISS framing characters from iteration
-	for(int i = 0; i < n; i++) 
-		buffer[i] = buffer[i+2];
-	buffer[n] = '\0'; // Null terminate the string (we should only have a string after removing framing characters)
-
-	// Pass the data to the raw receive callback
-	if(APRS::receive_raw_callback != nullptr)
-		APRS::receive_raw_callback(buffer, n);
-
-	// Parse the AX.25 data
-	AX25Frame* frame = new AX25Frame();
-	AX25::parse_frame(buffer, n, frame);
-	if(APRS::receive_ax25_callback != nullptr)
-		APRS::receive_ax25_callback(frame);
-}
-
 void init_tty(const char* serialPort, uint32_t baudRate)
 {
 	spdlog::info("libAPRS: Initializing KISS over TTY...");
@@ -117,6 +89,34 @@ void init_tty(const char* serialPort, uint32_t baudRate)
 
 	// Set the current iface to TTY
 	currentIface = KISS_TTY_IFACE;
+}
+
+void handle_sigio(int sig)
+{
+	// Read data from the KISS device
+	char buffer[1024];
+	int n = read(kissfd, buffer, 1024);
+	if(n < 0) {
+		spdlog::error("libAPRS: Error reading from KISS TNC");
+		return;
+	}
+	spdlog::debug("libAPRS: Received {} bytes from APRS", n);
+
+	// Shift the buffer to remove the KISS framing characters
+	n -= 3; // Remove the KISS framing characters from iteration
+	for(int i = 0; i < n; i++) 
+		buffer[i] = buffer[i+2];
+	buffer[n] = '\0'; // Null terminate the string (we should only have a string after removing framing characters)
+
+	// Pass the data to the raw receive callback
+	if(APRS::receive_raw_callback != nullptr)
+		APRS::receive_raw_callback(buffer, n);
+
+	// Parse the AX.25 data
+	AX25Frame* frame = new AX25Frame();
+	AX25::parse_frame(buffer, n, frame);
+	if(APRS::receive_ax25_callback != nullptr)
+		APRS::receive_ax25_callback(frame);
 }
 
 void send_raw(const char* data, uint32_t len)
