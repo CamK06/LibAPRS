@@ -14,11 +14,9 @@
 namespace KISS
 {
 
-// TCP vars
-int sockfd;
-
 // General vars
 int currentIface;
+int kissfd;
 
 void init_tcp(const char* ipAddress, uint16_t port)
 {
@@ -27,8 +25,8 @@ void init_tcp(const char* ipAddress, uint16_t port)
 	spdlog::info("libAPRS: Port: {}", port);
 	
 	// Create socket
-	sockfd = socket(AF_INET, SOCK_STREAM, 0);
-	if (sockfd < 0) {
+	kissfd = socket(AF_INET, SOCK_STREAM, 0);
+	if (kissfd < 0) {
 		spdlog::error("libAPRS: Error opening KISS socket");
 		return;
 	}
@@ -44,19 +42,19 @@ void init_tcp(const char* ipAddress, uint16_t port)
 
 	// Connect to the KISS server
 	spdlog::info("libAPRS: Connecting to KISS server...");
-	if(connect(sockfd, (struct sockaddr *)&kiss_addr, sizeof(kiss_addr)) < 0) {
+	if(connect(kissfd, (struct sockaddr *)&kiss_addr, sizeof(kiss_addr)) < 0) {
 		spdlog::error("libAPRS: Error connecting to KISS TNC");
 		return;
 	}
 	spdlog::info("libAPRS: Connected to KISS server");
 
 	// Set the socket to non-blocking and set O_ASYNC
-	int flags = fcntl(sockfd, F_GETFL, 0);
-	fcntl(sockfd, F_SETFL, flags | O_NONBLOCK | O_ASYNC);
+	int flags = fcntl(kissfd, F_GETFL, 0);
+	fcntl(kissfd, F_SETFL, flags | O_NONBLOCK | O_ASYNC);
 	
 	// Ensure we receive SIGIO on data received
 	signal(SIGIO, handle_sigio);
-	if(fcntl(sockfd, F_SETOWN, getpid()) < 0) {
+	if(fcntl(kissfd, F_SETOWN, getpid()) < 0) {
 		spdlog::error("libAPRS: Error setting SIGIO handler");
 		return;
 	}
@@ -67,11 +65,11 @@ void init_tcp(const char* ipAddress, uint16_t port)
 
 void handle_sigio(int sig)
 {
-	// Read data from the socket
+	// Read data from the KISS device
 	char buffer[1024];
-	int n = read(sockfd, buffer, 1024);
+	int n = read(kissfd, buffer, 1024);
 	if(n < 0) {
-		spdlog::error("libAPRS: Error reading from KISS socket");
+		spdlog::error("libAPRS: Error reading from KISS TNC");
 		return;
 	}
 	spdlog::debug("libAPRS: Received {} bytes from APRS", n);
@@ -86,7 +84,6 @@ void handle_sigio(int sig)
 	if(APRS::receive_raw_callback != nullptr)
 		APRS::receive_raw_callback(buffer, n);
 
-	// TODO: Implement
 	// Parse the AX.25 data
 	AX25Frame* frame = new AX25Frame();
 	AX25::parse_frame(buffer, n, frame);
@@ -96,18 +93,30 @@ void handle_sigio(int sig)
 
 void init_tty(const char* serialPort, uint32_t baudRate)
 {
-	// TODO
-}
+	spdlog::info("libAPRS: Initializing KISS over TTY...");
+	spdlog::info("libAPRS: Serial Port: {}", serialPort);
+	spdlog::info("libAPRS: Baud Rate: {}", baudRate);
 
-void send_ax25(AX25Frame* frame)
-{
-	// Build an AX.25 frame
-	char* ax25Frame = new char[331];
-	uint32_t len;
-	AX25::encode_frame(frame, ax25Frame, &len);
+	// Open the serial port
+	kissfd = open(serialPort, O_RDWR | O_NOCTTY | O_SYNC);
+	if(kissfd < 0) {
+		spdlog::error("libAPRS: Error opening serial port");
+		return;
+	}
 
-	// Send the frame
-	send_raw(ax25Frame, len);
+	// Set the serial port to non-blocking and set O_ASYNC
+	int flags = fcntl(kissfd, F_GETFL, 0);
+	fcntl(kissfd, F_SETFL, flags | O_NONBLOCK | O_ASYNC);
+
+	// Ensure we receive SIGIO on data received
+	signal(SIGIO, handle_sigio);
+	if(fcntl(kissfd, F_SETOWN, getpid()) < 0) {
+		spdlog::error("libAPRS: Error setting SIGIO handler");
+		return;
+	}
+
+	// Set the current iface to TTY
+	currentIface = KISS_TTY_IFACE;
 }
 
 void send_raw(const char* data, uint32_t len)
@@ -121,17 +130,12 @@ void send_raw(const char* data, uint32_t len)
 	kissFrame[len+2] = 0xC0;
 
 	// Send the frame
-	if(currentIface == KISS_TCP_IFACE) {
-		int n = write(sockfd, kissFrame, len+3);
-		if(n < 0) {
-			spdlog::error("libAPRS: Error writing to KISS socket");
-			return;
-		}
-		spdlog::debug("libAPRS: Sent {} bytes over KISS", n);
+	int n = write(kissfd, kissFrame, len+3);
+	if(n < 0) {
+		spdlog::error("libAPRS: Error writing to KISS TNC");
+		return;
 	}
-	else if(currentIface == KISS_TTY_IFACE) {
-		// TODO
-	}
+	spdlog::debug("libAPRS: Sent {} bytes over KISS", n);
 
 	// Cleanup
 	delete[] kissFrame;
