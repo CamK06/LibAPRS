@@ -99,6 +99,17 @@ void init_tty(const char* serialPort, uint32_t baudRate)
 	// TODO
 }
 
+void send_ax25(AX25Frame* frame)
+{
+	// Build an AX.25 frame
+	char* ax25Frame = new char[331];
+	uint32_t len;
+	AX25::encode_frame(frame, ax25Frame, &len);
+
+	// Send the frame
+	send_raw(ax25Frame, len);
+}
+
 void send_raw(const char* data, uint32_t len)
 {
 	// Build a KISS frame

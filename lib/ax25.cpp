@@ -1,12 +1,14 @@
 #include "libaprs/ax25.h"
+#include "libaprs/kiss.h"
 #include <spdlog/spdlog.h>
+#include <vector>
+#include <fstream>
 
 namespace AX25
 {
 
 void parse_frame(char* data, uint32_t len, AX25Frame* outFrame)
 {
-    outFrame->len = len;
     int controlIndex = 0;
 
     // Make the whole packet into ASCII bytes
@@ -65,6 +67,68 @@ void parse_frame(char* data, uint32_t len, AX25Frame* outFrame)
         }
         outFrame->payload[i-controlIndex-2] = data[i];
     }
+}
+
+void encode_frame(AX25Frame* frame, char* outData, uint32_t* outLen)
+{   
+    char* ax25Frame = new char[331];
+    int index = 0;
+
+    // Add the destination callsign
+    for(int i = 0; i < 6; i++) {
+        if(frame->destination.callsign[i] == '\0')
+            break;
+        ax25Frame[index] = frame->destination.callsign[i] << 1;
+        index++;
+    }
+
+    // Add the destination SSID
+    ax25Frame[index] = frame->destination.ssid << 1; //| 0x60; // OR with 0x60 to set the last two bits to 1 to indicate the end of the callsign
+    index++;
+
+    // Add the source callsign
+    for(int i = 0; i < 6; i++) {
+        if(frame->source.callsign[i] == '\0')
+            break;
+        ax25Frame[index] = frame->source.callsign[i] << 1;
+        index++;
+    }
+
+    // Add the source SSID
+    ax25Frame[index] = frame->source.ssid << 1; //| 0x60; // OR with 0x60 to set the last two bits to 1 to indicate the end of the callsign
+    index++;
+
+    // Add the digipeater list
+    for(int i = 0; i < frame->rptCount; i++) {
+        for(int j = 0; j < 6; j++) {
+            if(frame->rptList[i].callsign[j] == '\0')
+                break;
+            ax25Frame[index] = frame->rptList[i].callsign[j] << 1;
+            index++;
+        }
+        // Set the last bit of the SSID to 1 if it's the last digipeater
+        if(i == frame->rptCount-1)
+            ax25Frame[index] = (frame->rptList[i].ssid << 1) | 0x1;
+        else
+            ax25Frame[index] = frame->rptList[i].ssid << 1;
+        index++;
+    }
+
+    // Add the control and protocol bytes
+    ax25Frame[index++] = AX25_CONTROL;
+    ax25Frame[index++] = AX25_PROTOCOL;
+
+    // Add the payload
+    for(int i = 0; i < 256; i++) {
+        if(frame->payload[i] == '\0')
+            break;
+        ax25Frame[index++] = frame->payload[i];
+    }
+
+    // Return the new frame
+    memcpy(outData, ax25Frame, index);
+    *outLen = index;
+    delete[] ax25Frame;
 }
 
 }

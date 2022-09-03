@@ -33,6 +33,18 @@ void init_tty(const char* serialPort, uint32_t baudRate, int iface)
     // TODO: Implement
 }
 
+void send_ax25(AX25Frame* frame)
+{
+    switch(currentIface) {
+        case IFACE_KISS:
+            KISS::send_ax25(frame);
+            break;
+        default:
+            spdlog::error("libAPRS: No interface selected! Are you sure you initialized libAPRS?");
+            break;
+    }
+}
+
 void send_raw(const char* data, uint32_t len)
 {
     switch(currentIface) {

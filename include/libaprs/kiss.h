@@ -2,6 +2,7 @@
 
 #include <stdint.h>
 #include "interfaces.h"
+#include "ax25.h"
 
 // KISS Characters
 #define KISS_FEND 0xC0
@@ -27,6 +28,7 @@ namespace KISS
 {
 	void init_tcp(const char* ipAddress, uint16_t port);
 	void init_tty(const char* serialPort, uint32_t baudRate);
+	void send_ax25(AX25Frame* frame);
 	void send_raw(const char* data, uint32_t len);
 	void handle_sigio(int sig);
 }

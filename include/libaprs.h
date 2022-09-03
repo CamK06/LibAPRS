@@ -17,6 +17,7 @@ void init_tty(const char* serialPort, uint32_t baudRate, int iface);
 void init_ip(const char* ipAddress, uint16_t port, int iface);
 void set_receive_raw_callback(receive_raw_callback_t callback);
 void set_receive_ax25_callback(receive_ax25_callback_t callback);
+void send_ax25(AX25Frame* frame);
 void send_raw(const char* data, uint32_t len);
 
 }

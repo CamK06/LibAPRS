@@ -19,15 +19,12 @@ typedef struct AX25Frame
 	AX25Callsign destination;
 	AX25Callsign rptList[8];
 	char rptCount;
-	char rptFlags;
-	uint16_t control;
 	char pid;
 	char payload[256];
-	size_t len;
 } AX25Frame;
 
 namespace AX25
 {
     void parse_frame(char* data, uint32_t len, AX25Frame* outFrame);
-    //void send_frame(AX25Frame* frame);
+	void encode_frame(AX25Frame* frame, char* outData, uint32_t* outLen);
 }
