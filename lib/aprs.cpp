@@ -1,5 +1,6 @@
 #include "libaprs.h"
 #include "libaprs/kiss.h"
+#include "libaprs/js8.h"
 #include <spdlog/spdlog.h>
 #include <string>
 
@@ -52,6 +53,21 @@ void set_digi_path(const char* callsign, uint8_t ssid, int index)
     pathCount = index + 1;
 }
 
+void send_status(const char* status)
+{
+    // Format the status message into the info field
+    char* info = new char[256];
+    info[0] = '>';
+    strcpy(info+1, status);
+
+    // Build the frame
+    AX25Frame frame;
+    AX25::build_frame(callsign, destination, path, pathCount, info, &frame);
+
+    // Send the frame
+    send_ax25(&frame);
+}
+
 void send_raw_info(const char* info)
 {
     // Build the frame
@@ -99,6 +115,10 @@ void init_ip(const char* ipAddress, uint16_t port, int iface)
             KISS::init_tcp(ipAddress, port);
             currentIface = IFACE_KISS;
             break;
+        case IFACE_JS8CALL:
+            JS8::init_tcp(ipAddress, port);
+            currentIface = IFACE_JS8CALL;
+            break;
         default:
             spdlog::error("libAPRS: Invalid interface type");
             break;
@@ -121,7 +141,7 @@ void init_tty(const char* serialPort, uint32_t baudRate, int iface)
             currentIface = IFACE_KISS;
             break;
         default:
-            spdlog::error("libAPRS: Invalid interface type");
+            spdlog::error("libAPRS: Invalid interface type. Are you sure this interface type exists and supports TTY?");
             break;
     }
 
@@ -130,6 +150,12 @@ void init_tty(const char* serialPort, uint32_t baudRate, int iface)
 
 void send_ax25(AX25Frame* frame)
 {
+    // If we're using JS8Call, just send the info field as is
+    if(currentIface == IFACE_JS8CALL) {
+        JS8::send_raw_info(frame->payload, strlen(frame->payload));
+        return;
+    }
+
     // Build an AX.25 frame
 	char* ax25Frame = new char[331];
 	uint32_t len;
@@ -145,6 +171,10 @@ void send_raw(const char* data, uint32_t len)
         case IFACE_KISS:
             KISS::send_raw(data, len);
             break;
+        case IFACE_JS8CALL:
+            spdlog::warn("libAPRS: Raw data over JS8 is raw text content, NOT an encoded AX.25 frame! Please only send_raw with JS8 if you absolutely know what you're doing!");
+            JS8::send_raw_info(data, len);
+        break;
         default:
             spdlog::error("libAPRS: No interface selected! Are you sure you initialized libAPRS?");
             break;

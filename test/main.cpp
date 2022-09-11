@@ -1,4 +1,5 @@
 #include "libaprs.h"
+#include "libaprs/js8.h"
 #include <iostream>
 #include <spdlog/spdlog.h>
 #include <string.h>
@@ -28,10 +29,7 @@ void receive_ax25_callback(AX25Frame* frame)
 int main()
 {
     spdlog::set_level(spdlog::level::debug);
-    APRS::init_ip("127.0.0.1", 8001, IFACE_KISS);
-    APRS::set_receive_raw_callback(&receive_raw_callback);
-    APRS::set_receive_ax25_callback(&receive_ax25_callback);
-    APRS::set_callsign("VE3KCN", 0);
+    APRS::init_ip("127.0.0.1", 2442, IFACE_JS8CALL);
     while(true) {}
 }
 

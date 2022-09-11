@@ -17,6 +17,7 @@ extern receive_ax25_callback_t receive_ax25_callback;
 void set_callsign(const char* callsign, uint8_t ssid);
 void set_destination(const char* callsign, uint8_t ssid);
 void set_digi_path(const char* callsign, uint8_t ssid, int index);
+void send_status(const char* status);
 void send_raw_info(const char* info);
 void send_message(const char* message, const char* destinationCall, uint8_t destinationSSID);
 
