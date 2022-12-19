@@ -26,6 +26,7 @@ typedef struct AX25Frame
 namespace AX25
 {
 	void build_frame(AX25Callsign source, AX25Callsign destination, AX25Callsign* rptList, int rptCount, char* payload, AX25Frame* outFrame);
-    void parse_frame(char* data, uint32_t len, AX25Frame* outFrame);
+    void parse_tnc2_frame(char* data, uint32_t len, AX25Frame* outFrame);
+	void parse_raw_frame(char* data, uint32_t len, AX25Frame* outFrame);
 	void encode_frame(AX25Frame* frame, char* outData, uint32_t* outLen);
 }

@@ -1,6 +1,7 @@
 #include "libaprs.h"
 #include "libaprs/kiss.h"
 #include "libaprs/js8.h"
+#include "libaprs/aprsis.h"
 #include <spdlog/spdlog.h>
 #include <string>
 
@@ -119,6 +120,10 @@ void init_ip(const char* ipAddress, uint16_t port, int iface)
             JS8::init_tcp(ipAddress, port);
             currentIface = IFACE_JS8CALL;
             break;
+        //case IFACE_APRSIS:
+        //    APRSIS::init_tcp(ipAddress, port);
+        //    currentIface = IFACE_APRSIS;
+        //    break;
         default:
             spdlog::error("libAPRS: Invalid interface type");
             break;
@@ -175,6 +180,9 @@ void send_raw(const char* data, uint32_t len)
             spdlog::warn("libAPRS: Raw data over JS8 is raw text content, NOT an encoded AX.25 frame! Please only send_raw with JS8 if you absolutely know what you're doing!");
             JS8::send_raw_info(data, len);
         break;
+        //case IFACE_APRSIS:
+        //    APRSIS::send_raw(data, len);
+        //break;
         default:
             spdlog::error("libAPRS: No interface selected! Are you sure you initialized libAPRS?");
             break;

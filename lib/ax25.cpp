@@ -18,7 +18,7 @@ void build_frame(AX25Callsign source, AX25Callsign destination, AX25Callsign* rp
     strcpy(outFrame->payload, payload);
 }
 
-void parse_frame(char* data, uint32_t len, AX25Frame* outFrame)
+void parse_raw_frame(char* data, uint32_t len, AX25Frame* outFrame)
 {
     int controlIndex = 0;
 
@@ -78,6 +78,68 @@ void parse_frame(char* data, uint32_t len, AX25Frame* outFrame)
         }
         outFrame->payload[i-controlIndex-2] = data[i];
     }
+}
+
+void parse_tnc2_frame(char* data, uint32_t len, AX25Frame* outFrame)
+{
+    // TNC2 header as raw strings (to be converted to appropriate data types later)
+    char source[7];
+    char sourceSSID[3];
+    char destination[7];
+    char destinationSSID[2];
+    char digipeaters[8][7];
+    char digipeaterSSIDs[8][2];
+    char digipeaterCount = 0;
+
+    // Used to determmine which string/char array to write to in parsing
+    int currentField = 0;
+    int fieldStart = 0;
+
+    // Parse
+    for(int i = 0; i < len; i++) {
+        switch(currentField)
+        {
+            // Source callsign
+            case 0:
+                if(data[i] == '>') {
+                    currentField += 2; // Skip SSID
+                    fieldStart = i+1;
+                    source[i] = '\0';
+                    break;
+                }
+                else if(data[i] == '-') {
+                    currentField++;
+                    fieldStart = i+1;
+                    source[i] = '\0';
+                    break;
+                }
+                if(i < 7)
+                    source[i] = data[i];
+                break;
+
+            // SSID
+            case 1:
+                if(data[i] == '>') {
+                    currentField++;
+                    sourceSSID[i-fieldStart] = '\0';
+                    fieldStart = i+1;
+                    break;
+                }
+                if(i-fieldStart < 2)
+                    sourceSSID[i-fieldStart] = data[i];
+                break;
+
+            default:
+                break;
+        }
+    }
+
+    // Format into the AX25Frame
+    for(int i = 0; i < 6; i++) {
+        outFrame->source.callsign[i] = source[i];
+        outFrame->destination.callsign[i] = destination[i];
+    }
+    outFrame->source.ssid = atoi(sourceSSID);
 }
 
 void encode_frame(AX25Frame* frame, char* outData, uint32_t* outLen)
